@@ -24,8 +24,14 @@ struct timer_global {
 struct pm_timer {
 
 	static inline timer_global *get_global(){
-		static timer_global global;
-		return &global;
+		static timer_global *global = nullptr;
+		if(global == nullptr)
+			global = new
+#ifdef PM_EMBED_STACK
+                (pm_stack::allocate(sizeof(*global)))
+#endif
+                timer_global();
+		return global;
 	}
 	
 	static void init_system(uint32_t systick_frequency){
@@ -146,13 +152,6 @@ struct pm_timer {
 
 	
 };
-
-extern "C"{
-void SysTick_Handler(){
-	timer_global *global = pm_timer::get_global();
-	global->current_ticks_++;
-}
-}
 
 inline Defer delay_ticks(uint32_t ticks) {
 	return newPromise([&ticks](Defer d){

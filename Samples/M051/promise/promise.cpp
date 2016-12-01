@@ -82,6 +82,7 @@ void pm_run_loop(){
 	while(true){
 		__WFE;
 		pm_timer::wakeup();
+		irq_x::run();
 	}
 }
 
@@ -117,11 +118,38 @@ void test_1(){
 		test_1();
 	});
 }
+
+void test_irq(){
+	newPromise([](Defer d){
+		LED_A(1);
+		irq_disable();
+		irq<SysTick_IRQn>::wait(d);
+		irq_enable();
+	}).then([]() {
+		return newPromise([](Defer d){
+			LED_A(0);
+			irq_disable();
+			irq<SysTick_IRQn>::wait(d);
+			irq_enable();
+		});
+	}).then([]() {
+		test_irq();
+	});
+}
+
+void SysTick_Handler(){
+	timer_global *global = pm_timer::get_global();
+	global->current_ticks_++;
+	
+	if(global->current_ticks_ % 1024 == 0)
+		irq<SysTick_IRQn>::post();
+}
 	
 void main_cpp(){
 	test_0();
 	test_1();
 	
+	test_irq();
 	pm_run_loop();
 }
 
