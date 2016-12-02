@@ -1,3 +1,4 @@
+#pragma once
 #ifndef INC_DEFER_LIST_H_
 #define INC_DEFER_LIST_H_
 

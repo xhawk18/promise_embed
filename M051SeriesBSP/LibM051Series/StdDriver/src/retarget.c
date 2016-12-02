@@ -28,8 +28,8 @@
 #if !(defined(__ICCARM__) && (__VER__ >= 6010000))
 struct __FILE { int handle; /* Add whatever you need here */ };
 #endif
-//FILE __stdout;
-//FILE __stdin;
+FILE __stdout;
+FILE __stdin;
 
 /*---------------------------------------------------------------------------------------------------------*/
 /* Routine to write a char                                                                                 */
@@ -41,13 +41,7 @@ static char g_buf[16];
 static char g_buf_len = 0;
 
 /* The function to process semihosted command */
-#ifdef __cplusplus
-extern "C"{
-#endif
 extern int SH_DoCommand(int n32In_R0, int n32In_R1, int *pn32Out_R0);
-#ifdef __cplusplus
-}
-#endif
 #endif
 
 
@@ -206,7 +200,7 @@ void _ttywrch(int ch)
  *
  *
  */
-#if 0
+
 int fputc(int ch, FILE *stream)
 {
   SendChar(ch);
@@ -249,7 +243,6 @@ int fgetc(FILE *stream) {
 int ferror(FILE *stream) {
   return EOF;
 }
-#endif
 
 #ifdef DEBUG_ENABLE_SEMIHOST 
 # ifdef __ICCARM__

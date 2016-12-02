@@ -1,3 +1,4 @@
+#pragma once
 #ifndef INC_IRQ_HPP_
 #define INC_IRQ_HPP_
 
