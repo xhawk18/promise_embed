@@ -101,7 +101,7 @@ struct pm_stack {
 
         void *ret = (void *)top_;
         top_ += size;
-        printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(top_ - (char *)start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
+        //printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(top_ - (char *)start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
         return ret;
     }
 
