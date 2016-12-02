@@ -2,9 +2,6 @@
 #ifndef INC_PROMISE_MIN_HPP_
 #define INC_PROMISE_MIN_HPP_
 
-extern 
-	void SendChar(int ch);
-
 /*
  * Promise API implemented by cpp as Javascript promise style 
  *
@@ -36,6 +33,7 @@ extern
 
 #include <memory>
 #include <typeinfo>
+#include <algorithm>
 #include <stdint.h>
 
 namespace promise {

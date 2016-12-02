@@ -17,9 +17,7 @@
 #define LED3_GPIO_GRP	P3
 #define LED3_GPIO_BIT	7
 
-extern "C"{
-	void main_cpp(int n);
-}
+void main_cpp(int n);
 
 int main(){
 

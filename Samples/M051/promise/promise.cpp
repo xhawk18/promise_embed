@@ -80,7 +80,7 @@ void pm_run_loop(){
 #define TT_SYSTICK_CLOCK		22118400
 	pm_timer::init_system(TT_SYSTICK_CLOCK);
 	while(true){
-		__WFE;
+		__WFE();
 		pm_timer::run();
 		irq_x::run();
 		defer_list::run();
