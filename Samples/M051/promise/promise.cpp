@@ -81,8 +81,9 @@ void pm_run_loop(){
 	pm_timer::init_system(TT_SYSTICK_CLOCK);
 	while(true){
 		__WFE;
-		pm_timer::wakeup();
+		pm_timer::run();
 		irq_x::run();
+		defer_list::run();
 	}
 }
 

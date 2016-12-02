@@ -831,6 +831,7 @@ inline Defer While(FUNC func) {
 
 }
 
+#include "defer_list.hpp"
 #include "timer.hpp"
 #include "irq.hpp"
 

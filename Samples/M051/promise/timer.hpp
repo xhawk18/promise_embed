@@ -9,7 +9,6 @@ namespace promise{
 
 struct timer_global {
     pm_list  timers_;
-    pm_list  waked_timers_;
     volatile uint64_t current_ticks_;
     volatile uint64_t time_offset_;             /* tt_set_time() only set this value */	
 	
@@ -76,7 +75,7 @@ struct pm_timer {
 		return ticks;
 	}
 	
-	static void wakeup(){
+	static void run(){
 		timer_global *global = pm_timer::get_global();
 
 		uint32_t current_ticks = pm_timer::get_ticks ();
@@ -91,19 +90,12 @@ struct pm_timer {
 			int32_t ticks_to_wakeup = (int32_t)(timer->wakeup_ticks_ - current_ticks);
 			node_next = node->next();
 
-			if(ticks_to_wakeup <= 0)
-				global->waked_timers_.move(node);
+			if(ticks_to_wakeup <= 0){
+				defer_list::attach(timer->defer_);
+				node->detach();
+				pm_allocator::dec_ref(timer);
+			}
 			else break;
-		}
-		
-		for(node = global->waked_timers_.next(); node != &global->waked_timers_; node = node_next){
-			pm_timer *timer = reinterpret_cast<pm_timer *>(pm_memory_pool_buf_header::to_ptr(node));
-			Defer defer = timer->defer_;
-			node_next = node->next();
-			node->detach();
-			pm_allocator::dec_ref(timer);
-			
-			defer.resolve();
 		}
 	}
 	
