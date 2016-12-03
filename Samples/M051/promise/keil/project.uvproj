@@ -370,7 +370,7 @@
             <v6Lto>0</v6Lto>
             <v6WtE>0</v6WtE>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--diag_error=warning</MiscControls>
               <Define>DEBUG_ENABLE_SEMIHOST</Define>
               <Undefine></Undefine>
               <IncludePath>..;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series;..\..\..\..\M051SeriesBSP\LibM051Series\StdDriver\inc</IncludePath>
