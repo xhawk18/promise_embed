@@ -65,7 +65,10 @@ struct pm_timer {
 
     static uint32_t msec_to_ticks(uint32_t msec){
         //timer_global *global = pm_timer::get_global();
-        uint64_t u64_ticks = TT_TICKS_PER_SECOND * (uint64_t)msec / 1000;
+        //uint64_t u64_ticks = TT_TICKS_PER_SECOND * (uint64_t)msec / 1000;
+        //Do not use devider for fast and small size
+        uint64_t u64_ticks = TT_TICKS_PER_SECOND * (uint64_t)msec * (TT_TICKS_DEVIDER / 1000) / TT_TICKS_DEVIDER;
+        
         uint32_t ticks = (u64_ticks > (uint64_t)(uint32_t)0xFFFFFFFF
             ? (uint32_t)0xFFFFFFFF : (uint32_t)u64_ticks);
 
@@ -97,8 +100,11 @@ struct pm_timer {
 
 
 
-    pm_timer(const Defer &defer)
-        : defer_(defer){
+    //pm_timer(const Defer &defer)
+    //    : defer_(defer){
+    //}
+    pm_timer()
+        : defer_(){
     }
 
     void start2(uint32_t ticks){
@@ -134,15 +140,19 @@ struct pm_timer {
         }
     }
 
-private:
+//private:
     uint32_t wakeup_ticks_;
     Defer defer_;
 };
 
 inline Defer delay_ticks(uint32_t ticks) {
-    return newPromise([&ticks](Defer d){
-        pm_timer *timer = pm_new<pm_timer>(d);
+    pm_timer *timer = pm_new<pm_timer>();
+    return newPromise([ticks, timer](const Defer &d){
+        timer->defer_ = d;
         timer->start2(ticks);
+    }).fail([timer]() -> Defer {
+        timer->stop();
+        return newPromise([](const Defer &d){ d.reject(); });
     });
 }
 
@@ -155,6 +165,13 @@ inline Defer delay_s(uint32_t sec) {
     uint32_t sleep_ticks = (u64_ticks > (uint64_t)(uint32_t)0xFFFFFFFF
         ? (uint32_t)0xFFFFFFFF : (uint32_t)u64_ticks);
     return delay_ticks(sleep_ticks);
+}
+
+inline void kill_timer(Defer defer){
+    if(defer.operator->() != nullptr){
+        Defer timer = defer.find_pending();
+        timer.reject();
+    }
 }
 
 }

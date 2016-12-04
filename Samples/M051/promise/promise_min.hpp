@@ -116,11 +116,13 @@ struct pm_stack {
     //typedef pm_offset<PM_EMBED_STACK, 1>::type itr_t;
 
     static inline itr_t ptr_to_itr(void *ptr) {
-        return (itr_t)(((char *)ptr - (char *)pm_stack::start()) >> OFFSET_IGNORE_BIT);
+        if(ptr == nullptr) return (itr_t)-1;
+        else return (itr_t)(((char *)ptr - (char *)pm_stack::start()) >> OFFSET_IGNORE_BIT);
     }
 
     static inline void *itr_to_ptr(itr_t itr) {
-        return (void *)((char *)pm_stack::start() + ((ptrdiff_t)itr << OFFSET_IGNORE_BIT));
+        if(itr == (itr_t)-1) return nullptr;
+        else return (void *)((char *)pm_stack::start() + ((ptrdiff_t)itr << OFFSET_IGNORE_BIT));
     }
 #else
     static const size_t OFFSET_IGNORE_BIT = 0;
@@ -633,6 +635,7 @@ struct Promise {
         , status_(kInit)
         , func_cleared(0){
         //printf("size promise = %d %d %d\n", (int)sizeof(*this), (int)sizeof(prev_), (int)sizeof(next_));
+        //printf("prev_ = %x %x, start = %x\n", (int)prev_, pm_stack::itr_to_ptr(prev_), pm_stack::start());
     }
 
     virtual ~Promise() {
@@ -709,6 +712,7 @@ struct Promise {
         Defer promise = pm_make_shared2<PromiseEx<Promise, FUNC_ON_RESOLVED, FUNC_ON_REJECTED>, Promise>(on_resolved, on_rejected);
         next_ = promise;
         promise->prev_ = pm_stack::ptr_to_itr(reinterpret_cast<void *>(this));
+        //printf("2prev_ = %d %x %x\n", (int)promise->prev_, pm_stack::itr_to_ptr(promise->prev_), this);
         return call_next();
     }
 
@@ -731,12 +735,16 @@ struct Promise {
         if (status_ == kInit) {
             Promise *p = this;
             Promise *prev = static_cast<Promise *>(pm_stack::itr_to_ptr(p->prev_));
+            //printf("3prev_ = %d %x\n", (int)p->prev_, pm_stack::itr_to_ptr(p->prev_));
             while (prev != nullptr) {
                 if (prev->status_ != kInit)
                     return prev->next_;
                 p = prev;
+                //printf("4prev_ = %d %x\n", (int)p->prev_, pm_stack::itr_to_ptr(p->prev_));
                 prev = static_cast<Promise *>(pm_stack::itr_to_ptr(p->prev_));
             }
+
+            pm_allocator::add_ref(p);
             return Defer(p);
         }
         else {
@@ -753,11 +761,14 @@ struct Promise {
     }
 
     static inline void joinDeferObject(Defer &self, Defer &next){
-        if(self->next_.operator->())
+        if(self->next_.operator->()){
             self->next_->prev_ = pm_stack::ptr_to_itr(reinterpret_cast<void *>((next.operator->())));
+            //printf("5prev_ = %d %x\n", (int)self->next_->prev_, pm_stack::itr_to_ptr(self->next_->prev_));
+        }
         next->next_ = self->next_;
         self->next_ = next;
         next->prev_ = pm_stack::ptr_to_itr(reinterpret_cast<void *>((self.operator->())));
+        //printf("6prev_ = %d %x\n", (int)next->prev_, pm_stack::itr_to_ptr(next->prev_));
     }
 
 };
