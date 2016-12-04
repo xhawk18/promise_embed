@@ -1,6 +1,6 @@
 #pragma once
-#ifndef INC_PROMISE_HPP_
-#define INC_PROMISE_HPP_
+#ifndef INC_PROMISE_FULL_HPP_
+#define INC_PROMISE_FULL_HPP_
 
 /*
  * Promise API implemented by cpp as Javascript promise style 
@@ -30,7 +30,7 @@
  */
 
 #define PM_EMBED
-#define PM_EMBED_STACK (12*1024)
+#define PM_EMBED_STACK (512*2)
 
 #include <memory>
 #include <tuple>
@@ -118,7 +118,7 @@ struct pm_stack {
 
         void *ret = (char *)(*top_);
         *top_ += size;
-        //printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(top_ - (char *)start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
+        printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(*top_ - (char *)start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
         return ret;
     }
 
@@ -377,9 +377,15 @@ struct pm_allocator {
 
 template< class T, class... Args >
 inline T *pm_new(Args&&... args) {
-    return new(pm_allocator::template obtain<T>()) T(args...);
+    T *object = new(pm_allocator::template obtain<T>()) T(args...);
+    pm_allocator::add_ref(object);
+    return object;
 }
 
+template< class T >
+inline void pm_delete(T *object){
+    pm_allocator::dec_ref(object);
+}
 
 // Any library
 // See http://www.boost.org/libs/any for Documentation.
@@ -829,7 +835,6 @@ public:
 
     explicit pm_shared_ptr(T *object)
         : object_(object) {
-        pm_allocator::add_ref(object_);
     }
 
     explicit pm_shared_ptr()
@@ -910,7 +915,6 @@ public:
 
     explicit pm_shared_ptr_promise(T *object)
         : object_(object) {
-        pm_allocator::add_ref(object_);
     }
 
     explicit pm_shared_ptr_promise()
