@@ -2,7 +2,7 @@
 #ifndef INC_TIMER_HPP_
 #define INC_TIMER_HPP_
 
-#include "promise_min.hpp"
+//#include "promise.hpp"
 
 #define TT_TICKS_PER_SECOND 1000
 
@@ -64,7 +64,7 @@ struct pm_timer {
     }
 
     static uint32_t msec_to_ticks(uint32_t msec){
-        timer_global *global = pm_timer::get_global();
+        //timer_global *global = pm_timer::get_global();
         uint64_t u64_ticks = TT_TICKS_PER_SECOND * (uint64_t)msec / 1000;
         uint32_t ticks = (u64_ticks > (uint64_t)(uint32_t)0xFFFFFFFF
             ? (uint32_t)0xFFFFFFFF : (uint32_t)u64_ticks);
@@ -88,7 +88,7 @@ struct pm_timer {
             if(ticks_to_wakeup <= 0){
                 defer_list::attach(timer->defer_);
                 node->detach();
-                pm_allocator::dec_ref(timer);
+                pm_delete(timer);
                 node = node_next;
             }
             else break;
@@ -112,15 +112,13 @@ struct pm_timer {
             pm_memory_pool_buf_header *header = pm_container_of(node, &pm_memory_pool_buf_header::list_);
             pm_timer *timer = reinterpret_cast<pm_timer *>(pm_memory_pool_buf_header::to_ptr(header));
             int32_t ticks_to_wakeup = (int32_t)(timer->wakeup_ticks_ - current_ticks);
-            if (ticks_to_wakeup > ticks)
+            if (ticks_to_wakeup >= 0 && (uint32_t)ticks_to_wakeup > ticks)
                 break;
         }
 
         pm_list *list = &pm_memory_pool_buf_header::from_ptr(this)->list_;
         if(!list->empty())
             list->detach();
-        else
-            pm_allocator::add_ref(this);
         node->attach(list);
     }
 
@@ -132,7 +130,7 @@ struct pm_timer {
         pm_list *list = &pm_memory_pool_buf_header::from_ptr(this)->list_;
         if(!list->empty()){
             list->detach();
-            pm_allocator::dec_ref(this);
+            pm_delete(this);
         }
     }
 

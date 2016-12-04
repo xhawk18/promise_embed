@@ -133,6 +133,7 @@ char GetChar(void)
     }
 
 #endif
+	return 0;
 }
 
 /**

@@ -100,13 +100,16 @@ inline void LED_B(int on){
     else   P3->DOUT &= ~BIT7;    
 }
 
-void test_0(){
+void test_0(int n){
+    int *n_ = pm_new<int>(n);
     delay_ms(2000).then([]()->Defer {
         LED_A(1);
         return delay_ms(2000);
-    }).then([](){
+    }).then([n_](){
         LED_A(0);
-        test_0();
+        if(*n_ > 0)
+        test_0(*n_ - 1);
+        pm_delete(n_);
     });
 }
     
@@ -147,10 +150,10 @@ void SysTick_Handler(){
 }
     
 void main_cpp(){
-    test_0();
+    test_0(20);
     test_1();
     
-    test_irq();
+    //test_irq();
     pm_run_loop();
 }
 

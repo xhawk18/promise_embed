@@ -9,7 +9,6 @@ struct defer_list{
         Defer *defer_ = pm_new<Defer>(defer);
         pm_list *node = &pm_memory_pool_buf_header::from_ptr(defer_)->list_;
         list->attach(node);
-        pm_allocator::add_ref(defer_);
     }
 
     static void attach(pm_list *list, pm_list *other){
@@ -27,7 +26,7 @@ struct defer_list{
             pm_list *node_next = node->next();
             node->detach();
             Defer defer_ = *defer;
-            pm_allocator::dec_ref(defer);
+            pm_delete(defer);
 
             defer_.resolve();
             node = node_next;
