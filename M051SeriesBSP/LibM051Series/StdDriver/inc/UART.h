@@ -648,8 +648,8 @@ static __INLINE void UART_SetTimeOutCounter(UART_T* UART,uint32_t u32Count)
                          
 __INLINE void UART_SetRTS_TrgLev(UART_T* UART,uint32_t eActLevel,uint32_t eTRG_Level)
 {
-    (UART)->MCR = ((UART)->MCR & ~UART_MCR_LEV_RTS_Msk     | (eActLevel ));
-    (UART)->FCR = ((UART)->FCR & ~UART_FCR_RTS_TRI_LEV_Msk | (eTRG_Level));
+    (UART)->MCR = (((UART)->MCR & ~UART_MCR_LEV_RTS_Msk)     | (eActLevel ));
+    (UART)->FCR = (((UART)->FCR & ~UART_FCR_RTS_TRI_LEV_Msk) | (eTRG_Level));
 }
 
 /**
