@@ -86,9 +86,9 @@ struct pm_timer {
             pm_timer *timer = reinterpret_cast<pm_timer *>(pm_memory_pool_buf_header::to_ptr(header));
 
             int32_t ticks_to_wakeup = (int32_t)(timer->wakeup_ticks_ - current_ticks);
-            pm_list *node_next = node->next();
 
             if(ticks_to_wakeup <= 0){
+                pm_list *node_next = node->next();
                 defer_list::attach(timer->defer_);
                 node->detach();
                 pm_delete(timer);
@@ -97,8 +97,39 @@ struct pm_timer {
             else break;
         }
     }
+    
+    static void kill__(Defer &defer){
+#ifdef PM_DEBUG
+        pm_assert(defer->type_ == PM_TYPE_TIMER);
+#endif
 
+        timer_global *global = pm_timer::get_global();
 
+        pm_list *node = global->timers_.next();
+        while(node != &global->timers_){
+            pm_memory_pool_buf_header *header = pm_container_of(node, &pm_memory_pool_buf_header::list_);
+            pm_timer *timer = reinterpret_cast<pm_timer *>(pm_memory_pool_buf_header::to_ptr(header));
+
+            pm_list *node_next = node->next();
+            if(timer->defer_ == defer){
+                node->detach();
+                pm_delete(timer);
+            }
+            node = node_next;
+        }
+    }
+
+    static void kill(Defer &defer){
+        if(defer.operator->()){
+            Defer pending = defer.find_pending();
+            if(pending.operator->()){
+                pm_timer::kill__(pending);
+                defer_list::remove(pending);
+                pending.reject();
+            }
+            defer.clear();
+        }
+    }
 
     //pm_timer(const Defer &defer)
     //    : defer_(defer){
@@ -122,7 +153,9 @@ struct pm_timer {
                 break;
         }
 
-        pm_list *list = &pm_memory_pool_buf_header::from_ptr(this)->list_;
+        pm_memory_pool_buf_header *header = pm_memory_pool_buf_header::from_ptr(this);
+        pm_list *list = &header->list_;
+        pm_assert(header->ref_count_ > 0);
         if(!list->empty())
             list->detach();
         node->attach(list);
@@ -130,14 +163,6 @@ struct pm_timer {
 
     void start(uint32_t msec){
         start2(msec_to_ticks(msec));
-    }
-
-    void stop(){
-        pm_list *list = &pm_memory_pool_buf_header::from_ptr(this)->list_;
-        if(!list->empty()){
-            list->detach();
-            pm_delete(this);
-        }
     }
 
 //private:
@@ -148,11 +173,11 @@ struct pm_timer {
 inline Defer delay_ticks(uint32_t ticks) {
     pm_timer *timer = pm_new<pm_timer>();
     return newPromise([ticks, timer](const Defer &d){
+#ifdef PM_DEBUG
+        d->type_ = PM_TYPE_TIMER;
+#endif
         timer->defer_ = d;
         timer->start2(ticks);
-    }).fail([timer]() -> Defer {
-        timer->stop();
-        return newPromise([](const Defer &d){ d.reject(); });
     });
 }
 
@@ -167,11 +192,8 @@ inline Defer delay_s(uint32_t sec) {
     return delay_ticks(sleep_ticks);
 }
 
-inline void kill_timer(Defer defer){
-    if(defer.operator->() != nullptr){
-        Defer timer = defer.find_pending();
-        timer.reject();
-    }
+inline void kill_timer(Defer &defer){
+    return pm_timer::kill(defer);
 }
 
 }

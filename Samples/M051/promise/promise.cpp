@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string>
 #include "M051Series.h"         // For M051 series
-#include "promise_min.hpp"
+#include "promise.hpp"
 
 using namespace promise;
 
@@ -100,25 +100,31 @@ inline void LED_B(int on){
     else   P3->DOUT &= ~BIT7;    
 }
 
+Defer dd;
+
 void test_0(int n){
     int *n_ = pm_new<int>(n);
     delay_ms(2000).then([]()->Defer {
-        LED_A(1);
+        LED_B(1);
         return delay_ms(2000);
     }).then([n_](){
-        LED_A(0);
+        LED_B(0);
         if(*n_ > 0)
-        test_0(*n_ - 1);
+            test_0(*n_ - 1);
+        else
+            kill_timer(dd);
         pm_delete(n_);
     });
 }
-    
+
+
 void test_1(){
-    delay_ms(3000).then([]()->Defer {
-        LED_B(1);
-        return delay_ms(3000);
+    dd = delay_ms(300).then([]()->Defer {
+        LED_A(1);
+        dd = delay_ms(300);
+        return dd;
     }).then([]() {
-        LED_B(0);
+        LED_A(0);
         test_1();
     });
 }
@@ -150,7 +156,7 @@ void SysTick_Handler(){
 }
     
 void main_cpp(){
-    test_0(20);
+    //test_0(2);
     test_1();
     
     //test_irq();

@@ -17,6 +17,10 @@
 #define LED3_GPIO_GRP	P3
 #define LED3_GPIO_BIT	7
 
+/* For debug usage */
+uint32_t g_alloc_size = 0;
+uint32_t g_stack_size = 0;
+
 void main_cpp(int n);
 
 int main(){
