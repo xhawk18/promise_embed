@@ -117,8 +117,8 @@ struct pm_stack {
         void *ret = top;
         top += size;
 
-        g_stack_size = (uint32_t)(top - pm_stack::start());
-        //printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(top - (char *)start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
+        g_stack_size = (uint32_t)(top - start_);
+        //printf("mem ======= %d %d, size = %d, %d, %d, %x\n", (int)(top - start_), (int)sizeof(void *), (int)size, OFFSET_IGNORE_BIT, (int)sizeof(itr_t), ret);
         return ret;
     }
 
