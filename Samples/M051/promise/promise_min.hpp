@@ -595,6 +595,11 @@ public:
         return object_->template always<FUNC_ON_ALWAYS>(on_always);
     }
 
+    template <typename FUNC_ON_BYPASS>
+    Defer bypass(FUNC_ON_BYPASS on_bypass) const {
+        return object_->template bypass<FUNC_ON_BYPASS>(on_bypass);
+    }
+
 private:
     inline void swap(Defer &ptr) {
         std::swap(object_, ptr.object_);
@@ -611,6 +616,9 @@ template <typename RET, typename FUNC>
 struct ResolveChecker;
 template <typename RET, typename FUNC>
 struct RejectChecker;
+
+template <typename FUNC>
+inline Defer newPromise(FUNC func);
 
 template <typename Promise, typename FUNC_ON_RESOLVED, typename FUNC_ON_REJECTED>
 struct PromiseEx 
@@ -730,23 +738,27 @@ struct Promise {
     Defer call_next() {
         if(status_ == kResolved) {
             if(next_.operator->()){
+                pm_allocator::add_ref(this);
                 status_ = kFinished;
                 Defer d = next_->call_resolve(next_);
                 next_->clear_func();
                 if(d.operator->())
                     d->call_next();
                 //next_.clear();
+                pm_allocator::dec_ref(this);
                 return d;
             }
         }
         else if(status_ == kRejected ) {
             if(next_.operator->()){
+                pm_allocator::add_ref(this);
                 status_ = kFinished;
                 Defer d =  next_->call_reject(next_);
                 next_->clear_func();
                 if (d.operator->())
                     d->call_next();
                 //next_.clear();
+                pm_allocator::dec_ref(this);
                 return d;
             }
         }
@@ -780,6 +792,34 @@ struct Promise {
     Defer always(FUNC_ON_ALWAYS on_always) {
         return then<FUNC_ON_ALWAYS, FUNC_ON_ALWAYS>(on_always, on_always);
     }
+
+    template <typename FUNC_ON_BYPASS>
+    Defer bypass(FUNC_ON_BYPASS on_bypass) {
+        struct on_resolved {
+            FUNC_ON_BYPASS on_bypass_;
+            on_resolved(const FUNC_ON_BYPASS &on_bypass)
+                : on_bypass_(on_bypass){
+            }
+            void operator()() const {
+                on_bypass_();
+            }
+        };
+
+        struct on_rejected {
+            FUNC_ON_BYPASS on_bypass_;
+            on_rejected(const FUNC_ON_BYPASS &on_bypass)
+                : on_bypass_(on_bypass){
+            }
+            Defer operator()() const {
+                on_bypass_();
+                return newPromise([](Defer &d){
+                    d.reject();
+                });
+            }
+        };
+        return then(on_resolved(on_bypass), on_rejected(on_bypass));
+    }
+
 
     Defer find_pending() {
         if (status_ == kInit) {

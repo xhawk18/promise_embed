@@ -29,7 +29,7 @@ Defer run(Defer &next){
         output_func_name();
     }).then([](){
         output_func_name();
-    }).then([&next]()->Defer{
+    }).then([&]()->Defer{
         output_func_name();
         next = newPromise([](Defer d) {
             output_func_name();
@@ -57,7 +57,7 @@ Defer run2(Defer &next){
         output_func_name();
     }).then([](){
         output_func_name();
-    }).then([&next]()->Defer{
+    }).then([&]()->Defer{
         output_func_name();
         next = newPromise([](Defer d) {
             output_func_name();
@@ -107,12 +107,13 @@ void test_0(int n){
     delay_ms(2000).then([]()->Defer {
         LED_B(1);
         return delay_ms(2000);
-    }).then([n_](){
+    }).then([=](){
         LED_B(0);
         if(*n_ > 0)
             test_0(*n_ - 1);
         else
             kill_timer(dd);
+    }).bypass([=](){
         pm_delete(n_);
     });
 }

@@ -22,12 +22,12 @@ struct irq_x{
         //add user code ...
         irq_enable();
       */
-    static void wait(pm_list *irq_list, const Defer &defer){
+    static void wait__(pm_list *irq_list, const Defer &defer){
         defer_list::attach(irq_list, defer);
     }
 
     /* Called in interrupt */
-    static void post(pm_list *irq_list){
+    static void post__(pm_list *irq_list){
         irq_disable();
         pm_list *ready = irq_x::get_ready_list();
         defer_list::attach(ready, irq_list);
@@ -35,7 +35,7 @@ struct irq_x{
     }
     
     /* Called in thread */
-    static void kill(pm_list *irq_list, Defer &defer){
+    static void kill__(pm_list *irq_list, Defer &defer){
         if(defer.operator->()){
             Defer pending;
             irq_disable();
@@ -78,15 +78,15 @@ private:
 template<int IRQ>
 struct irq{
     static void wait(const Defer &defer){
-        irq_x::wait(get_waiting_list(), defer);
+        irq_x::wait__(get_waiting_list(), defer);
     }
 
     static void post(){
-        irq_x::post(get_waiting_list());
+        irq_x::post__(get_waiting_list());
     }
 
-    static void kill(Defer &defer){
-        irq_x::kill(get_waiting_list(), defer);
+    static void kill(Defer defer){
+        irq_x::kill__(get_waiting_list(), defer);
     }
 private:
     static pm_list *get_waiting_list(){

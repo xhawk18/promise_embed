@@ -192,7 +192,7 @@ inline Defer delay_s(uint32_t sec) {
     return delay_ticks(sleep_ticks);
 }
 
-inline void kill_timer(Defer &defer){
+inline void kill_timer(Defer defer){
     return pm_timer::kill(defer);
 }
 
