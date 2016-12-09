@@ -37,10 +37,13 @@ struct irq_x{
     /* Called in thread */
     static void kill__(pm_list *irq_list, Defer &defer){
         if(defer.operator->()){
+            Defer no_ref = defer;
+            defer.clear();
+
             Defer pending;
             irq_disable();
-            if(defer.operator->()){
-                pending = defer.find_pending();
+            if(no_ref.operator->()){
+                pending = no_ref.find_pending();
                 if(pending.operator->()){
                     defer_list::remove(irq_list, pending);
                     pm_list *ready = get_ready_list();
@@ -53,8 +56,6 @@ struct irq_x{
                 defer_list::remove(pending);
                 pending.reject();
             }
-
-            defer.clear();
         }
     }
 
@@ -85,7 +86,7 @@ struct irq{
         irq_x::post__(get_waiting_list());
     }
 
-    static void kill(Defer defer){
+    static void kill(Defer &defer){
         irq_x::kill__(get_waiting_list(), defer);
     }
 private:

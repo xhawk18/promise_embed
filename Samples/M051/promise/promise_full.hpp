@@ -1636,6 +1636,10 @@ inline Defer While(FUNC func) {
     });
 }
 
+/* Return a rejected promise directly */
+inline Defer reject(){
+    return newPromise([](Defer &d){ d.reject(); });
+}
 
 }
 

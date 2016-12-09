@@ -121,13 +121,15 @@ struct pm_timer {
 
     static void kill(Defer &defer){
         if(defer.operator->()){
-            Defer pending = defer.find_pending();
+            Defer no_ref = defer;
+            defer.clear();
+
+            Defer pending = no_ref.find_pending();
             if(pending.operator->()){
                 pm_timer::kill__(pending);
                 defer_list::remove(pending);
                 pending.reject();
             }
-            defer.clear();
         }
     }
 
@@ -192,7 +194,7 @@ inline Defer delay_s(uint32_t sec) {
     return delay_ticks(sleep_ticks);
 }
 
-inline void kill_timer(Defer defer){
+inline void kill_timer(Defer &defer){
     return pm_timer::kill(defer);
 }
 

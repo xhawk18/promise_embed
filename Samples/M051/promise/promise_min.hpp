@@ -617,8 +617,7 @@ struct ResolveChecker;
 template <typename RET, typename FUNC>
 struct RejectChecker;
 
-template <typename FUNC>
-inline Defer newPromise(FUNC func);
+inline Defer reject(void);
 
 template <typename Promise, typename FUNC_ON_RESOLVED, typename FUNC_ON_REJECTED>
 struct PromiseEx 
@@ -812,9 +811,7 @@ struct Promise {
             }
             Defer operator()() const {
                 on_bypass_();
-                return newPromise([](Defer &d){
-                    d.reject();
-                });
+                return promise::reject();
             }
         };
         return then(on_resolved(on_bypass), on_rejected(on_bypass));
@@ -974,6 +971,10 @@ inline Defer While(FUNC func) {
     });
 }
 
+/* Return a rejected promise directly */
+inline Defer reject(){
+    return newPromise([](Defer &d){ d.reject(); });
+}
 
 }
 
