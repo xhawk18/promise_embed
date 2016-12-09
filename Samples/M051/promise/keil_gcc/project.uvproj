@@ -277,7 +277,7 @@
             <wLevel>2</wLevel>
             <uThumb>1</uThumb>
             <VariousControls>
-              <MiscControls>--specs=nano.specs --specs=nosys.specs -ffunction-sections -Wno-strict-aliasing</MiscControls>
+              <MiscControls>--specs=nano.specs --specs=nosys.specs -ffunction-sections -fdata-sections -Wno-strict-aliasing</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath>..;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series;..\..\..\..\M051SeriesBSP\LibM051Series\StdDriver\inc</IncludePath>
