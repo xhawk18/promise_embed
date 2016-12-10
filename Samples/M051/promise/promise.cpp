@@ -7,11 +7,13 @@ using namespace promise;
 
 #define output_func_name() do{ printf("in function %s, line %d\n", __func__, __LINE__); } while(0)
 
-void test1() {
+char test1(int a) {
     output_func_name();
+    return '3';
 }
 
-int test2() {
+int test2(char c) {
+    printf("c = %d\n", c);
     output_func_name();
     return 5;
 }
@@ -36,8 +38,9 @@ Defer run(Defer &next){
         });
         //Will call next.resole() or next.reject() later
         return next;
-    }).then([]() {
+    }).then([](int a, char &b, short &c) -> int {
         output_func_name();
+        return 5;
     }).fail([](){
         output_func_name();
     }).then(test1)
@@ -64,8 +67,9 @@ Defer run2(Defer &next){
         });
         //Will call next.resole() or next.reject() later
         return next;
-    }).then([]() {
+    }).then([]() -> char {
         output_func_name();
+        return 'c';
     }).fail([](){
         output_func_name();
     }).then(test1)
@@ -158,7 +162,11 @@ void SysTick_Handler(){
     
 void main_cpp(){
     //test_0(2);
-    test_1();
+    //test_1();
+    Defer d;
+    run(d);
+    printf("after----\n");
+    d.resolve(3, 'c', 'd');
     
     //test_irq();
     pm_run_loop();
