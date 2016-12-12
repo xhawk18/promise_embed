@@ -483,6 +483,13 @@ struct pm_size_allocator {
 
 struct pm_allocator {
 private:
+    static pm_memory_pool_buf_header *obtain_pool_buf(pm_memory_pool *pool){
+        pm_list *node = pool->free_.next();
+        node->detach();
+        pm_memory_pool_buf_header *header = pm_container_of(node, &pm_memory_pool_buf_header::list_);
+        return header;
+    }
+
     template <size_t SIZE>
     static void *obtain_impl() {
         g_alloc_size += SIZE;
@@ -494,9 +501,7 @@ private:
             return (void *)&pool_buf->buf_;
         }
         else {
-            pm_list *node = pool->free_.next();
-            node->detach();
-            pm_memory_pool_buf_header *header = pm_container_of(node, &pm_memory_pool_buf_header::list_);
+            pm_memory_pool_buf_header *header = obtain_pool_buf(pool);
             pm_memory_pool_buf<SIZE> *pool_buf = pm_container_of
                 (header, &pm_memory_pool_buf<SIZE>::header_);
             //printf("++++ obtain = %p %d\n", (void *)&pool_buf->buf_, sizeof(T));
@@ -1109,7 +1114,6 @@ inline pm_shared_ptr<B> pm_make_shared2(Args&&... args) {
     return pm_shared_ptr<B>(pm_new<T>(args...));
 }
 
-struct Promise;
 
 template<typename T>
 class pm_shared_ptr_promise {
@@ -1240,43 +1244,40 @@ struct ResolveChecker;
 template <typename RET, typename FUNC>
 struct RejectChecker;
 
-template <typename Promise, typename FUNC_ON_RESOLVED, typename FUNC_ON_REJECTED>
-struct PromiseEx 
-    : public Promise {
+
+
+inline Defer newHeadPromise(void);
+
+struct PromiseCaller{
+    virtual ~PromiseCaller(){};
+    virtual Defer call(Defer &self, Promise *caller) = 0;
+};
+
+template <typename FUNC_ON_RESOLVED>
+struct ResolvedCaller
+    : public PromiseCaller{
     typedef typename func_traits<FUNC_ON_RESOLVED>::ret_type resolve_ret_type;
+    FUNC_ON_RESOLVED on_resolved_;
+
+    ResolvedCaller(const FUNC_ON_RESOLVED &on_resolved)
+        : on_resolved_(on_resolved){}
+
+    virtual Defer call(Defer &self, Promise *caller) {
+        return ResolveChecker<resolve_ret_type, FUNC_ON_RESOLVED>::call(on_resolved_, self, caller);
+    }
+};
+
+template <typename FUNC_ON_REJECTED>
+struct RejectedCaller
+    : public PromiseCaller{
     typedef typename func_traits<FUNC_ON_REJECTED>::ret_type reject_ret_type;
+    FUNC_ON_REJECTED on_rejected_;
 
-    struct {
-        void *buf[(sizeof(FUNC_ON_RESOLVED) + sizeof(void *) - 1)/ sizeof(void *)];
-    } on_resolved_;
-    struct {
-        void *buf[(sizeof(FUNC_ON_REJECTED) + sizeof(void *) - 1) / sizeof(void *)];
-    } on_rejected_;
+    RejectedCaller(const FUNC_ON_REJECTED &on_rejected)
+        : on_rejected_(on_rejected){}
 
-    PromiseEx(const FUNC_ON_RESOLVED &on_resolved, const FUNC_ON_REJECTED &on_rejected)
-        : Promise() {
-        //printf("self = %d, %d %d\n", (int)sizeof(*this), (int)sizeof(on_resolved_), (int)sizeof(on_rejected_));
-        reinterpret_cast<void *>(new(&on_resolved_) FUNC_ON_RESOLVED(on_resolved));
-        reinterpret_cast<void *>(new(&on_rejected_) FUNC_ON_REJECTED(on_rejected));
-    }
-
-    virtual ~PromiseEx() {
-        if(!Promise::func_cleared)
-            clear_func_impl();
-    }
-
-    virtual void clear_func_impl() {
-        reinterpret_cast<FUNC_ON_RESOLVED *>(&on_resolved_)->~FUNC_ON_RESOLVED();
-        reinterpret_cast<FUNC_ON_REJECTED *>(&on_rejected_)->~FUNC_ON_REJECTED();
-    }
-    
-    virtual Defer call_resolve(Defer &self, Promise *caller) {
-        const FUNC_ON_RESOLVED &on_resolved = *reinterpret_cast<FUNC_ON_RESOLVED *>(&on_resolved_);
-        return ResolveChecker<resolve_ret_type, FUNC_ON_RESOLVED>::call(on_resolved, self, caller);
-    }
-    virtual Defer call_reject(Defer &self, Promise *caller) {
-        const FUNC_ON_REJECTED &on_rejected = *reinterpret_cast<FUNC_ON_REJECTED *>(&on_rejected_);
-        return RejectChecker<reject_ret_type, FUNC_ON_REJECTED>::call(on_rejected, self, caller);
+    virtual Defer call(Defer &self, Promise *caller) {
+        return RejectChecker<reject_ret_type, FUNC_ON_REJECTED>::call(on_rejected_, self, caller);
     }
 };
 
@@ -1284,6 +1285,8 @@ struct Promise {
     Defer next_;
     pm_stack::itr_t prev_;
     pm_any any_;
+    PromiseCaller *resolved_;
+    PromiseCaller *rejected_;
 
     enum status_t {
         kInit       = 0,
@@ -1292,7 +1295,6 @@ struct Promise {
         kFinished   = 3
     };
     uint8_t status_      ;//: 2;
-    uint8_t func_cleared ;//: 1;
 
 #ifdef PM_DEBUG
     uint32_t type_;
@@ -1302,8 +1304,9 @@ struct Promise {
     explicit Promise()
         : next_(nullptr)
         , prev_(pm_stack::ptr_to_itr(nullptr))
+        , resolved_(nullptr)
+        , rejected_(nullptr)
         , status_(kInit)
-        , func_cleared(0)
 #ifdef PM_DEBUG
         , type_(PM_TYPE_NONE)
 #endif
@@ -1312,6 +1315,7 @@ struct Promise {
     }
 
     virtual ~Promise() {
+        clear_func();
         if (next_.operator->()) {
             next_->prev_ = pm_stack::ptr_to_itr(nullptr);
         }
@@ -1347,15 +1351,33 @@ struct Promise {
             call_next();
     }
 
-    virtual Defer call_resolve(Defer &self, Promise *caller) = 0;
-    virtual Defer call_reject(Defer &self, Promise *caller) = 0;
-    virtual void clear_func_impl() = 0;
+    Defer call_resolve(Defer &self, Promise *caller){
+        if(resolved_ == nullptr){
+            self->prepare_resolve(caller->any_);
+            return self;
+        }
+        Defer ret = resolved_->call(self, caller);
+        if(ret != self)
+            joinDeferObject(self, ret);
+        return ret;
+    }
+
+    Defer call_reject(Defer &self, Promise *caller){
+        if(rejected_ == nullptr){
+            self->prepare_reject(caller->any_);
+            return self;
+        }
+        Defer ret = rejected_->call(self, caller);
+        if(ret != self)
+            joinDeferObject(self, ret);
+        return ret;
+    }
 
     void clear_func() {
-        if(!func_cleared) {
-            func_cleared = 1;
-            clear_func_impl();
-        }
+        pm_delete(resolved_);
+        resolved_ = nullptr;
+        pm_delete(rejected_);
+        rejected_ = nullptr;
     }
 
     template <typename FUNC>
@@ -1406,6 +1428,14 @@ struct Promise {
         return next_;
     }
 
+
+    Defer then_impl(PromiseCaller *resolved, PromiseCaller *rejected){
+        Defer promise = newHeadPromise();
+        promise->resolved_ = resolved;
+        promise->rejected_ = rejected;
+        return then(promise);
+    }
+
     Defer then(Defer &promise) {
         joinDeferObject(this, promise);
         //printf("2prev_ = %d %x %x\n", (int)promise->prev_, pm_stack::itr_to_ptr(promise->prev_), this);
@@ -1414,18 +1444,20 @@ struct Promise {
 
     template <typename FUNC_ON_RESOLVED, typename FUNC_ON_REJECTED>
     Defer then(FUNC_ON_RESOLVED on_resolved, FUNC_ON_REJECTED on_rejected) {
-        Defer promise = pm_make_shared2<PromiseEx<Promise, FUNC_ON_RESOLVED, FUNC_ON_REJECTED>, Promise>(on_resolved, on_rejected);
-        return then(promise);
+        return then_impl(static_cast<PromiseCaller *>(pm_new<ResolvedCaller<FUNC_ON_RESOLVED>>(on_resolved)),
+                         static_cast<PromiseCaller *>(pm_new<RejectedCaller<FUNC_ON_REJECTED>>(on_rejected)));
     }
 
     template <typename FUNC_ON_RESOLVED>
     Defer then(FUNC_ON_RESOLVED on_resolved) {
-        return then<FUNC_ON_RESOLVED, FnSimple>(on_resolved, nullptr);
+        return then_impl(static_cast<PromiseCaller *>(pm_new<ResolvedCaller<FUNC_ON_RESOLVED>>(on_resolved)),
+                         static_cast<PromiseCaller *>(nullptr));
     }
 
     template <typename FUNC_ON_REJECTED>
     Defer fail(FUNC_ON_REJECTED on_rejected) {
-        return then<FnSimple, FUNC_ON_REJECTED>(nullptr, on_rejected);
+        return then_impl(static_cast<PromiseCaller *>(nullptr),
+                         static_cast<PromiseCaller *>(pm_new<RejectedCaller<FUNC_ON_REJECTED>>(on_rejected)));
     }
 
     template <typename FUNC_ON_ALWAYS>
@@ -1500,8 +1532,6 @@ struct Promise {
         return p;
     }
     static Promise *get_tail(Promise *p){
-        if(p == nullptr)
-            while(1);
         while(p){
             Defer &next = p->next_;
             if(next.operator->() == nullptr) break;
@@ -1512,6 +1542,9 @@ struct Promise {
     
     
     static inline void joinDeferObject(Promise *self, Defer &next){
+        /* Check if there's any functions return null Defer object */
+        pm_assert(next.operator->() != nullptr);
+
         Promise *head = get_head(next.operator->());
         Promise *tail = get_tail(next.operator->());
 
@@ -1561,7 +1594,6 @@ struct ResolveChecker<Defer, FUNC> {
         try {
             if (verify_func_arg(func, caller->any_)) {
                 Defer ret = std::get<0>(call_func(func, caller->any_));
-                Promise::joinDeferObject(self, ret);
                 return ret;
             }
             else {
@@ -1575,7 +1607,6 @@ struct ResolveChecker<Defer, FUNC> {
 #else
         if (verify_func_arg(func, caller->any_)) {
             Defer ret = std::get<0>(call_func(func, caller->any_));
-            Promise::joinDeferObject(self, ret);
             return ret;
         }
         else {
@@ -1707,12 +1738,10 @@ struct RejectChecker<Defer, FUNC> {
         try {
             if(caller->any_.type() == typeid(std::exception_ptr)){
                 Defer ret = std::get<0>(ExCheck<std::tuple_size<arg_type>::value, FUNC>::call(func, self, caller));
-                Promise::joinDeferObject(self, ret);
                 return ret;
             }
             else if (verify_func_arg(func, caller->any_)) {
                 Defer ret = std::get<0>(call_func(func, caller->any_));
-                Promise::joinDeferObject(self, ret);
                 return ret;
             }
             else {
@@ -1727,7 +1756,6 @@ struct RejectChecker<Defer, FUNC> {
 #else
         if (verify_func_arg(func, caller->any_)) {
             Defer ret = std::get<0>(call_func(func, caller->any_));
-            Promise::joinDeferObject(self, ret);
             return ret;
         }
         else {
@@ -1787,10 +1815,14 @@ struct RejectChecker<RET, FnSimple> {
     }
 };
 
+inline Defer newHeadPromise(){
+    return Defer(pm_new<Promise>());
+}
+
 /* Create new promise object */
 template <typename FUNC>
 inline Defer newPromise(FUNC func) {
-    Defer promise = pm_make_shared2<PromiseEx<Promise, FnSimple, FnSimple>, Promise>(nullptr, nullptr);
+    Defer promise = newHeadPromise();
     promise->run(func, promise);
     return promise;
 }

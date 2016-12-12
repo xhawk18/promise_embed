@@ -162,7 +162,7 @@ void SysTick_Handler(){
     
 void main_cpp(){
     //test_0(2);
-    //test_1();
+    test_1();
     Defer d;
     run(d);
     printf("after----\n");
