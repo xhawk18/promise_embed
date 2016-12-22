@@ -20,6 +20,7 @@
 /* For debug usage */
 uint32_t g_alloc_size = 0;
 uint32_t g_stack_size = 0;
+uint32_t g_promise_call_len = 0;
 
 void main_cpp(int n);
 

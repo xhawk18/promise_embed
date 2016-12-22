@@ -40,6 +40,7 @@
 #ifdef PM_DEBUG
 #define PM_TYPE_NONE    0
 #define PM_TYPE_TIMER   1
+#define PM_MAX_CALL_LEN 30
 #define pm_assert(x)    do{ if((x) == 0) while(1); } while(0)
 #else
 #define pm_assert(x)    do{ } while(0)
@@ -48,6 +49,7 @@
 extern "C"{
 extern uint32_t g_alloc_size;
 extern uint32_t g_stack_size;
+extern uint32_t g_promise_call_len;
 }
 
 namespace promise {
@@ -726,7 +728,12 @@ struct Promise {
             self->prepare_resolve();
             return self;
         }
+        ++g_promise_call_len;
+#ifdef PM_MAX_CALL_LEN
+        if(g_promise_call_len > PM_MAX_CALL_LEN) pm_throw("PM_MAX_CALL_LEN");
+#endif
         Defer ret = resolved_->call(self);
+        --g_promise_call_len;
         if(ret != self)
             joinDeferObject(self, ret);
         return ret;
@@ -737,7 +744,12 @@ struct Promise {
             self->prepare_reject();
             return self;
         }
+        ++g_promise_call_len;
+#ifdef PM_MAX_CALL_LEN
+        if(g_promise_call_len > PM_MAX_CALL_LEN) pm_throw("PM_MAX_CALL_LEN");
+#endif
         Defer ret = rejected_->call(self);
+        --g_promise_call_len;
         if(ret != self)
             joinDeferObject(self, ret);
         return ret;
@@ -797,30 +809,30 @@ struct Promise {
     }
 
     template <typename FUNC_ON_RESOLVED, typename FUNC_ON_REJECTED>
-    Defer then(FUNC_ON_RESOLVED on_resolved, FUNC_ON_REJECTED on_rejected) {
+    Defer then(const FUNC_ON_RESOLVED &on_resolved, const FUNC_ON_REJECTED &on_rejected) {
         return then_impl(static_cast<PromiseCaller *>(pm_new<ResolvedCaller<FUNC_ON_RESOLVED>>(on_resolved)),
                          static_cast<PromiseCaller *>(pm_new<RejectedCaller<FUNC_ON_REJECTED>>(on_rejected)));
     }
 
     template <typename FUNC_ON_RESOLVED>
-    Defer then(FUNC_ON_RESOLVED on_resolved) {
+    Defer then(const FUNC_ON_RESOLVED &on_resolved) {
         return then_impl(static_cast<PromiseCaller *>(pm_new<ResolvedCaller<FUNC_ON_RESOLVED>>(on_resolved)),
                          static_cast<PromiseCaller *>(nullptr));
     }
 
     template <typename FUNC_ON_REJECTED>
-    Defer fail(FUNC_ON_REJECTED on_rejected) {
+    Defer fail(const FUNC_ON_REJECTED &on_rejected) {
         return then_impl(static_cast<PromiseCaller *>(nullptr),
                          static_cast<PromiseCaller *>(pm_new<RejectedCaller<FUNC_ON_REJECTED>>(on_rejected)));
     }
 
     template <typename FUNC_ON_ALWAYS>
-    Defer always(FUNC_ON_ALWAYS on_always) {
+    Defer always(const FUNC_ON_ALWAYS &on_always) {
         return then<FUNC_ON_ALWAYS, FUNC_ON_ALWAYS>(on_always, on_always);
     }
 
     template <typename FUNC_ON_BYPASS>
-    Defer bypass(FUNC_ON_BYPASS on_bypass) {
+    Defer bypass(const FUNC_ON_BYPASS &on_bypass) {
         struct on_resolved {
             FUNC_ON_BYPASS on_bypass_;
             on_resolved(const FUNC_ON_BYPASS &on_bypass)
@@ -1003,6 +1015,10 @@ inline Defer While(FUNC func) {
 /* Return a rejected promise directly */
 inline Defer reject(){
     return newPromise([](Defer &d){ d.reject(); });
+}
+/* Return a resolved promise directly */
+inline Defer resolve(){
+    return newPromise([](Defer &d){ d.resolve(); });
 }
 
 }

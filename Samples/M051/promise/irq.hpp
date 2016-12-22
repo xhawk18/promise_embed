@@ -29,8 +29,11 @@ struct irq_x{
     /* Called in interrupt */
     static void post__(pm_list *irq_list){
         irq_disable();
-        pm_list *ready = irq_x::get_ready_list();
-        defer_list::attach(ready, irq_list);
+        if(!irq_list->empty()){
+            ready_list *ready = irq_x::get_ready_list();
+            defer_list::attach(&ready->list_, irq_list);
+            ready->ready_ = true;
+        }
         irq_enable();
     }
     
@@ -40,37 +43,42 @@ struct irq_x{
             Defer no_ref = defer;
             defer.clear();
 
-            Defer pending;
-            irq_disable();
-            if(no_ref.operator->()){
-                pending = no_ref.find_pending();
-                if(pending.operator->()){
-                    defer_list::remove(irq_list, pending);
-                    pm_list *ready = get_ready_list();
-                    defer_list::remove(ready, pending);
-                }
-            }
-            irq_enable();
-            
-            if(pending.operator->()){
-                defer_list::remove(pending);
-                pending.reject();
+            if(no_ref->status_ == Promise::kInit){
+                defer_list::remove(irq_list, no_ref);
+                ready_list *ready = get_ready_list();
+                irq_disable();
+                defer_list::remove(&ready->list_, no_ref);
+                irq_enable();
+
+                defer_list::remove(no_ref);
+                no_ref.reject();
             }
         }
     }
 
     static void run(){
-        irq_disable();
-        pm_list *ready = get_ready_list();
-        defer_list::attach(ready);
-        irq_enable();
+        ready_list *ready = get_ready_list();
+        if(ready->ready_){
+            irq_disable();
+            defer_list::attach(&ready->list_);
+            ready->ready_ = false;
+            irq_enable();
+        }
     }
 
 private:
-    static inline pm_list *get_ready_list(){
-        static pm_list *list = nullptr;
+    struct ready_list{
+        pm_list list_;
+        bool ready_;
+        ready_list()
+            : list_()
+            , ready_(false){
+        }
+    };
+    static inline ready_list *get_ready_list(){
+        static ready_list *list = nullptr;
         if(list == nullptr)
-            list = pm_stack_new<pm_list>();
+            list = pm_stack_new<ready_list>();
         return list;
     }
 

@@ -124,11 +124,23 @@ struct pm_timer {
             Defer no_ref = defer;
             defer.clear();
 
-            Defer pending = no_ref.find_pending();
-            if(pending.operator->()){
-                pm_timer::kill__(pending);
-                defer_list::remove(pending);
-                pending.reject();
+            if(no_ref->status_ == Promise::kInit){
+                pm_timer::kill__(no_ref);
+                defer_list::remove(no_ref);
+                no_ref.reject();
+            }
+        }
+    }
+
+    static void direct_run(Defer &defer){
+        if(defer.operator->()){
+            Defer no_ref = defer;
+            defer.clear();
+
+            if(no_ref->status_ == Promise::kInit){
+                pm_timer::kill__(no_ref);
+                defer_list::remove(no_ref);
+                no_ref.resolve();
             }
         }
     }
@@ -194,8 +206,26 @@ inline Defer delay_s(uint32_t sec) {
     return delay_ticks(sleep_ticks);
 }
 
+inline Defer yield(){
+    return delay_ticks(0);
+}
+
 inline void kill_timer(Defer &defer){
     return pm_timer::kill(defer);
+}
+
+inline void direct_run_timer(Defer &defer){
+    return pm_timer::direct_run(defer);
+}
+
+/* Loop while func call resolved */
+template <typename FUNC>
+inline Defer delay_while(FUNC func) {
+    return newPromise(func).then([]() {
+        return yield();
+    }).then([func]() {
+        return delay_while(func);
+    });
 }
 
 }

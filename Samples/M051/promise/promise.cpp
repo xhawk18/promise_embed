@@ -7,13 +7,13 @@ using namespace promise;
 
 #define output_func_name() do{ printf("in function %s, line %d\n", __func__, __LINE__); } while(0)
 
-char test1(int a) {
+char test1() {
     output_func_name();
     return '3';
 }
 
-int test2(char c) {
-    printf("c = %d\n", c);
+int test2() {
+    //printf("c = %d\n", c);
     output_func_name();
     return 5;
 }
@@ -38,7 +38,7 @@ Defer run(Defer &next){
         });
         //Will call next.resole() or next.reject() later
         return next;
-    }).then([](int a, char &b, short &c) -> int {
+    }).then([]() -> int {
         output_func_name();
         return 5;
     }).fail([](){
@@ -124,9 +124,9 @@ void test_0(int n){
 
 
 void test_1(){
-    dd = delay_ms(300).then([]()->Defer {
+    dd = delay_ms(1000).then([]()->Defer {
         LED_A(1);
-        dd = delay_ms(300);
+        dd = delay_ms(1000);
         return dd;
     }).then([]() {
         LED_A(0);
@@ -166,7 +166,8 @@ void main_cpp(){
     Defer d;
     run(d);
     printf("after----\n");
-    d.resolve(3, 'c', 'd');
+    //d.resolve(3, 'c', 'd');
+    d.resolve();
     
     //test_irq();
     pm_run_loop();
