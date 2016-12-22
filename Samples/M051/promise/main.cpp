@@ -1,7 +1,25 @@
 #include <stdio.h>
 #include <string>
 #include "M051Series.h"         // For M051 series
-#include "promise.hpp"
+#include "promise/promise.hpp"
+
+
+#define LED0_GPIO_GRP	P3
+#define LED0_GPIO_BIT	4
+#define LED1_GPIO_GRP	P3
+#define LED1_GPIO_BIT	5
+#define LED2_GPIO_GRP	P3
+#define LED2_GPIO_BIT	6
+#define LED3_GPIO_GRP	P3
+#define LED3_GPIO_BIT	7
+
+extern "C" {
+/* For debug usage */
+uint32_t g_alloc_size = 0;
+uint32_t g_stack_size = 0;
+uint32_t g_promise_call_len = 0;
+}
+
 
 using namespace promise;
 
@@ -92,8 +110,6 @@ void pm_run_loop(){
 }
 
 
-extern "C"{
-
 inline void LED_A(int on){
     if(on) P3->DOUT |= BIT6;
     else   P3->DOUT &= ~BIT6;
@@ -159,8 +175,14 @@ void SysTick_Handler(){
     if(global->current_ticks_ % 1024 == 0)
         irq<SysTick_IRQn>::post();
 }
-    
-void main_cpp(){
+
+int main(){
+    /* Open LED GPIO for testing */
+    _GPIO_SET_PIN_MODE(LED0_GPIO_GRP, LED0_GPIO_BIT, GPIO_PMD_OUTPUT);
+    _GPIO_SET_PIN_MODE(LED1_GPIO_GRP, LED1_GPIO_BIT, GPIO_PMD_OUTPUT);
+    _GPIO_SET_PIN_MODE(LED2_GPIO_GRP, LED2_GPIO_BIT, GPIO_PMD_OUTPUT);
+    _GPIO_SET_PIN_MODE(LED3_GPIO_GRP, LED3_GPIO_BIT, GPIO_PMD_OUTPUT);
+
     //test_0(2);
     test_1();
     Defer d;
@@ -171,6 +193,6 @@ void main_cpp(){
     
     //test_irq();
     pm_run_loop();
+    return 0;
 }
 
-}

@@ -369,14 +369,9 @@
           <GroupName>Src</GroupName>
           <Files>
             <File>
-              <FileName>Main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Main.c</FilePath>
-            </File>
-            <File>
-              <FileName>promise.cpp</FileName>
+              <FileName>main.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\promise.cpp</FilePath>
+              <FilePath>..\main.cpp</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>

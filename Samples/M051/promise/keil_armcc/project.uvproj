@@ -349,7 +349,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>0</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -464,14 +464,9 @@
           <GroupName>Src</GroupName>
           <Files>
             <File>
-              <FileName>Main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Main.c</FilePath>
-            </File>
-            <File>
-              <FileName>promise.cpp</FileName>
+              <FileName>main.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>..\promise.cpp</FilePath>
+              <FilePath>..\main.cpp</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -501,7 +496,7 @@
                     <PlainCh>2</PlainCh>
                     <Ropi>2</Ropi>
                     <Rwpi>2</Rwpi>
-                    <wLevel>2</wLevel>
+                    <wLevel>0</wLevel>
                     <uThumb>2</uThumb>
                     <uSurpInc>2</uSurpInc>
                     <uC99>2</uC99>
@@ -510,7 +505,7 @@
                     <v6LangP>0</v6LangP>
                     <vShortEn>2</vShortEn>
                     <vShortWch>2</vShortWch>
-                    <v6Lto>0</v6Lto>
+                    <v6Lto>2</v6Lto>
                     <v6WtE>2</v6WtE>
                     <v6Rtti>2</v6Rtti>
                     <VariousControls>
