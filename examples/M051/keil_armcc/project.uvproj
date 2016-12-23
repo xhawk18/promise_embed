@@ -374,7 +374,7 @@
               <MiscControls>--diag_error=warning</MiscControls>
               <Define>DEBUG_ENABLE_SEMIHOST</Define>
               <Undefine></Undefine>
-              <IncludePath>..;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport;..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series;..\..\..\..\M051SeriesBSP\LibM051Series\StdDriver\inc</IncludePath>
+              <IncludePath>..\..\..\promise;..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport;..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series;..\M051SeriesBSP\LibM051Series\StdDriver\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -421,32 +421,32 @@
             <File>
               <FileName>core_cm0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport\core_cm0.c</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport\core_cm0.c</FilePath>
             </File>
             <File>
               <FileName>core_cm0.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport\core_cm0.h</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\CoreSupport\core_cm0.h</FilePath>
             </File>
             <File>
               <FileName>M051Series.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\M051Series.h</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\M051Series.h</FilePath>
             </File>
             <File>
               <FileName>system_M051Series.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\system_M051Series.h</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\system_M051Series.h</FilePath>
             </File>
             <File>
               <FileName>startup_M051Series.s</FileName>
               <FileType>2</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\startup\arm\startup_M051Series.s</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\startup\arm\startup_M051Series.s</FilePath>
             </File>
             <File>
               <FileName>system_M051Series.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\system_M051Series.c</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\CMSIS\CM0\DeviceSupport\Nuvoton\M051Series\system_M051Series.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -456,7 +456,7 @@
             <File>
               <FileName>retarget.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\M051SeriesBSP\LibM051Series\StdDriver\src\retarget.c</FilePath>
+              <FilePath>..\M051SeriesBSP\LibM051Series\StdDriver\src\retarget.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -519,9 +519,6 @@
               </FileOption>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>TinyThread</GroupName>
         </Group>
       </Groups>
     </Target>

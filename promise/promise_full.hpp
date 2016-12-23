@@ -1862,4 +1862,13 @@ inline Defer resolve(){
 #include "timer.hpp"
 #include "irq.hpp"
 
+namespace promise{
+
+inline void pm_run(){
+    pm_timer::run();
+    irq_x::run();
+    defer_list::run();
+}
+
+}
 #endif

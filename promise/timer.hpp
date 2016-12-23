@@ -35,6 +35,11 @@ struct pm_timer {
         global->TT_TICKS_PER_SECOND_1 = TT_TICKS_DEVIDER / TT_TICKS_PER_SECOND;
         SysTick_Config(systick_frequency / TT_TICKS_PER_SECOND);
     }
+    
+    static void increase_ticks(){
+        timer_global *global = pm_timer::get_global();
+        global->current_ticks_++;
+    }
 
     static uint64_t get_time(){
         timer_global *global = pm_timer::get_global();
