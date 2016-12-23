@@ -34,7 +34,10 @@ void pm_run_loop(){
 /* Use defined procedure                    */
 /********************************************/
 void LED_init(){
-    /* Open LED GPIO for testing */
+    /* Open LED GPIO for testing
+       P3.6    LED_A
+       P3.7    LED_B
+     */
     _GPIO_SET_PIN_MODE(P3, 6, GPIO_PMD_OUTPUT);
     _GPIO_SET_PIN_MODE(P3, 7, GPIO_PMD_OUTPUT);
 }
@@ -85,12 +88,17 @@ void LED_B_blink_fast(){
 
 int main(){
 
-    /* LED A 闪5次，然后 LED A 和 LED B 同时快闪 */
+    /* LED A 闪5次，
+       然后等待3秒钟,
+       然后LED A 和 LED B 同时快闪 */
     LED_A_blink(5).then([](){
+        return delay_s(3);
+    }).then([](){
         LED_A_blink_fast();
         LED_B_blink_fast();
     });
 
+    /* 实际闪烁会在pm_run_loop中运行 */
     pm_run_loop();
     return 0;
 }
