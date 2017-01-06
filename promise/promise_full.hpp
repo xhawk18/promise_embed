@@ -1224,9 +1224,9 @@ public:
         return object_->template always<FUNC_ON_ALWAYS>(on_always);
     }
 
-    template <typename FUNC_ON_BYPASS>
-    Defer bypass(FUNC_ON_BYPASS on_bypass) const {
-        return object_->template bypass<FUNC_ON_BYPASS>(on_bypass);
+    template <typename FUNC_ON_FINALLY>
+    Defer finally(FUNC_ON_FINALLY on_finally) const {
+        return object_->template finally<FUNC_ON_FINALLY>(on_finally);
     }
 
 private:
@@ -1477,25 +1477,25 @@ struct Promise {
         return then<FUNC_ON_ALWAYS, FUNC_ON_ALWAYS>(on_always, on_always);
     }
 
-    template <typename FUNC_ON_BYPASS>
-    Defer bypass(const FUNC_ON_BYPASS &on_bypass) {
-        return then([on_bypass](Promise *caller) -> Bypass {
-            if(verify_func_arg(on_bypass, caller->any_))
-                call_func(on_bypass, caller->any_);
+    template <typename FUNC_ON_FINALLY>
+    Defer finally(const FUNC_ON_FINALLY &on_finally) {
+        return then([on_finally](Promise *caller) -> Bypass {
+            if(verify_func_arg(on_finally, caller->any_))
+                call_func(on_finally, caller->any_);
             return Bypass();
-        }, [on_bypass](Defer &self, Promise *caller) -> Bypass {
+        }, [on_finally](Defer &self, Promise *caller) -> Bypass {
 #ifndef PM_EMBED
-            typedef typename func_traits<FUNC_ON_BYPASS>::arg_type arg_type;
+            typedef typename func_traits<FUNC_ON_FINALLY>::arg_type arg_type;
             if (caller->any_.type() == typeid(std::exception_ptr)) {
-                ExCheck<std::tuple_size<arg_type>::value, FUNC_ON_BYPASS>::call(on_bypass, self, caller);
+                ExCheck<std::tuple_size<arg_type>::value, FUNC_ON_FINALLY>::call(on_finally, self, caller);
             }
             else {
-                if (verify_func_arg(on_bypass, caller->any_))
-                    call_func(on_bypass, caller->any_);
+                if (verify_func_arg(on_finally, caller->any_))
+                    call_func(on_finally, caller->any_);
             }
 #else
-            if (verify_func_arg(on_bypass, caller->any_))
-                call_func(on_bypass, caller->any_);
+            if (verify_func_arg(on_finally, caller->any_))
+                call_func(on_finally, caller->any_);
 #endif
             return Bypass();
         });
@@ -1848,12 +1848,14 @@ inline Defer While(FUNC func) {
 }
 
 /* Return a rejected promise directly */
-inline Defer reject(){
-    return newPromise([](Defer &d){ d.reject(); });
+template <typename ...RET_ARG>
+inline Defer reject(const RET_ARG &... ret_arg){
+    return newPromise([=](Defer &d){ d.reject(ret_arg...); });
 }
 /* Return a resolved promise directly */
-inline Defer resolve(){
-    return newPromise([](Defer &d){ d.resolve(); });
+template <typename ...RET_ARG>
+inline Defer resolve(const RET_ARG &... ret_arg){
+    return newPromise([=](Defer &d){ d.resolve(ret_arg...); });
 }
 
 }

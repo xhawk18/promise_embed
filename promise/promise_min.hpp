@@ -602,9 +602,9 @@ public:
         return object_->template always<FUNC_ON_ALWAYS>(on_always);
     }
 
-    template <typename FUNC_ON_BYPASS>
-    Defer bypass(FUNC_ON_BYPASS on_bypass) const {
-        return object_->template bypass<FUNC_ON_BYPASS>(on_bypass);
+    template <typename FUNC_ON_FINALLY>
+    Defer finally(FUNC_ON_FINALLY on_finally) const {
+        return object_->template finally<FUNC_ON_FINALLY>(on_finally);
     }
 
 private:
@@ -831,29 +831,29 @@ struct Promise {
         return then<FUNC_ON_ALWAYS, FUNC_ON_ALWAYS>(on_always, on_always);
     }
 
-    template <typename FUNC_ON_BYPASS>
-    Defer bypass(const FUNC_ON_BYPASS &on_bypass) {
+    template <typename FUNC_ON_FINALLY>
+    Defer finally(const FUNC_ON_FINALLY &on_finally) {
         struct on_resolved {
-            FUNC_ON_BYPASS on_bypass_;
-            on_resolved(const FUNC_ON_BYPASS &on_bypass)
-                : on_bypass_(on_bypass){
+            FUNC_ON_FINALLY on_finally_;
+            on_resolved(const FUNC_ON_FINALLY &on_finally)
+                : on_finally_(on_finally){
             }
             void operator()() const {
-                on_bypass_();
+                on_finally_();
             }
         };
 
         struct on_rejected {
-            FUNC_ON_BYPASS on_bypass_;
-            on_rejected(const FUNC_ON_BYPASS &on_bypass)
-                : on_bypass_(on_bypass){
+            FUNC_ON_FINALLY on_finally_;
+            on_rejected(const FUNC_ON_FINALLY &on_finally)
+                : on_finally_(on_finally){
             }
             Defer operator()() const {
-                on_bypass_();
+                on_finally_();
                 return promise::reject();
             }
         };
-        return then(on_resolved(on_bypass), on_rejected(on_bypass));
+        return then(on_resolved(on_finally), on_rejected(on_finally));
     }
 
 
