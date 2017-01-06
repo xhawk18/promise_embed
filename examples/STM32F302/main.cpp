@@ -25,8 +25,8 @@ void SysTick_Handler(){
 void pm_run_loop(){
     pm_timer::init_system(SystemCoreClock);
     while(true){
-        __WFE();
         pm_run();
+        __WFE();
     }
 }
 
