@@ -734,8 +734,10 @@ struct Promise {
 #endif
         Defer ret = resolved_->call(self);
         --g_promise_call_len;
-        if(ret != self)
+        if (ret != self) {
             joinDeferObject(self, ret);
+            self->status_ = kFinished;
+        }
         return ret;
     }
 
@@ -750,8 +752,10 @@ struct Promise {
 #endif
         Defer ret = rejected_->call(self);
         --g_promise_call_len;
-        if(ret != self)
+        if (ret != self) {
             joinDeferObject(self, ret);
+            self->status_ = kFinished;
+        }
         return ret;
     }
 
@@ -911,7 +915,6 @@ struct Promise {
     
     
     static inline void joinDeferObject(Promise *self, Defer &next){
-
         /* Check if there's any functions return null Defer object */
         pm_assert(next.operator->() != nullptr);
 
@@ -1006,9 +1009,17 @@ inline Defer newPromise(FUNC func) {
 
 /* Loop while func call resolved */
 template <typename FUNC>
-inline Defer While(FUNC func) {
+inline Defer doWhile_unsafe(FUNC func) {
     return newPromise(func).then([func]() {
-        return While(func);
+        return doWhile_unsafe(func);
+    });
+}
+
+/* While loop func call resolved */
+template <typename FUNC>
+inline Defer doWhile(FUNC func) {
+    return newPromise([func](Defer d) {
+        doWhile_unsafe(func).call(d);
     });
 }
 
