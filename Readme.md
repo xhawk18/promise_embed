@@ -41,7 +41,7 @@
 
 Promise-embed为嵌入式开发提供了多任务支持，无需任何的操作系统，无需多线程。
 
-和[promise-cpp](../promise-cpp)一样，promise-embed是仿照Javascript Promise/A+标准的c++版本实现。同时，它精简了resolve/reject函数的实现，可以运行与内存极其受限的环境中。例如运行于Cortex-M0/M3芯片里。
+和[promise-cpp](https://github.com/xhawk18/promise-cpp)一样，promise-embed是仿照Javascript Promise/A+标准的c++版本实现。同时，它精简了resolve/reject函数的实现，可以运行与内存极其受限的环境中。例如运行于Cortex-M0/M3芯片里。
   
 Promise-embed和promise-cpp一样，利用c++11的能力，通过一个任务循环，提供了单线程多任务执行环境。
 
