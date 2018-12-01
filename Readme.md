@@ -13,8 +13,8 @@
         - [Defer reject();](#defer-reject)
         - [Defer doWhile(FUNC func);](#defer-dowhilefunc-func)
     - [Defer 类 （就是Promise对象所属的类）](#defer-类-就是promise对象所属的类)
-        - [Defer::resolve(const RET_ARG... &ret_arg);](#deferresolveconst-ret_arg-ret_arg)
-        - [Defer::reject(const RET_ARG... &ret_arg);](#deferrejectconst-ret_arg-ret_arg)
+        - [Defer::resolve();](#deferresolve)
+        - [Defer::reject();](#deferreject)
         - [Defer::then(FUNC_ON_RESOLVED on_resolved, FUNC_ON_REJECTED on_rejected)](#deferthenfunc_on_resolved-on_resolved-func_on_rejected-on_rejected)
         - [Defer::then(FUNC_ON_RESOLVED on_resolved)](#deferthenfunc_on_resolved-on_resolved)
         - [Defer::fail(FUNC_ON_REJECTED on_rejected)](#deferfailfunc_on_rejected-on_rejected)
@@ -171,7 +171,7 @@ doWhile([](Defer d){
 
 class Defer is the type of promise object.
 
-### Defer::resolve(const RET_ARG... &ret_arg);
+### Defer::resolve();
 Resolve the promise object with arguments, where you can put any number of ret_arg with any type.
 (Please be noted that it is a method of Defer object, which is different from the global resolve function.)
 for example --
@@ -182,7 +182,7 @@ return newPromise([](Defer d){
 })
 ```
 
-### Defer::reject(const RET_ARG... &ret_arg);
+### Defer::reject();
 Reject the promise object with arguments, where you can put any number of ret_arg with any type.
 (Please be noted that it is a method of Defer object, which is different from the global reject function.)
 for example --
