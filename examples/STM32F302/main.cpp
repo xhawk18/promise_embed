@@ -63,36 +63,40 @@ inline void LED_B(int on){
     else    GPIOB->BRR  = GPIO_Pin_9;
 }
 
+//LED A 闪烁count次
 Defer LED_A_blink(int count){
     if(count <= 0) return delay_ms(0);
 
-    return delay_ms(500).then([]()->Defer {
-        LED_A(1);
-        return delay_ms(500);
+    return delay_ms(500)                //等0.5秒
+    .then([]()->Defer {
+        LED_A(1);                       //LED A 打开
+        return delay_ms(500);           //等0.5秒
     }).then([=]()->Defer {
-        LED_A(0);
-        return LED_A_blink(count - 1);
+        LED_A(0);                       //LED A 关闭
+        return LED_A_blink(count - 1);  //再次闪烁
     });
 
 }
 
+//LED A 快速不断闪烁
 void LED_A_blink_fast(){
-    delay_ms(200).then([]()->Defer {
-        LED_A(1);
-        return delay_ms(200);
+    delay_ms(200).then([]()->Defer {    //等0.2秒
+        LED_A(1);                       //LED A 打开
+        return delay_ms(200);           //等0.2秒
     }).then([](){
-        LED_A(0);
-        LED_A_blink_fast();
+        LED_A(0);                       //LED A 关闭
+        LED_A_blink_fast();             //继续闪烁
     });
 }
 
+//LED B 快速不断闪烁
 void LED_B_blink_fast(){
-    delay_ms(200).then([]()->Defer {
-        LED_B(1);
-        return delay_ms(200);
+    delay_ms(200).then([]()->Defer {    //等0.2秒
+        LED_B(1);                       //LED B 打开
+        return delay_ms(200);           //等0.2秒
     }).then([](){
-        LED_B(0);
-        LED_B_blink_fast();
+        LED_B(0);                       //LED B 关闭
+        LED_B_blink_fast();             //继续闪烁
     });
 }
 
