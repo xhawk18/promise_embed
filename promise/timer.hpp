@@ -225,11 +225,19 @@ inline void direct_run_timer(Defer &defer){
 
 /* Loop while func call resolved */
 template <typename FUNC>
-inline Defer delay_while(FUNC func) {
+inline Defer delay_while_unsafe(FUNC func) {
     return newPromise(func).then([]() {
         return yield();
     }).then([func]() {
-        return delay_while(func);
+        return delay_while_unsafe(func);
+    });
+}
+
+/* While loop func call resolved */
+template <typename FUNC>
+inline Defer delay_while(FUNC func) {
+    return newPromise([func](Defer d) {
+        delay_while_unsafe(func).then(d);
     });
 }
 

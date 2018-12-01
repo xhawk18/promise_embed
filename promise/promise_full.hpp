@@ -1859,7 +1859,7 @@ inline Defer doWhile_unsafe(FUNC func) {
 template <typename FUNC>
 inline Defer doWhile(FUNC func) {
     return newPromise([func](Defer d) {
-        doWhile_unsafe(func).call(d);
+        doWhile_unsafe(func).then(d);
     });
 }
 
