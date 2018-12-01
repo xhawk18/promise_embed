@@ -266,12 +266,12 @@ struct pm_offset {
 //allocator
 struct pm_stack {
 #ifdef PM_EMBED_STACK
-    static inline char *start() {
+    static char *start() {
         static void *buf_[(PM_EMBED_STACK + sizeof(void *) - 1) / sizeof(void *)];
         return (char *)buf_;
     }
 
-    static inline void *allocate(size_t size) {
+    static void *allocate(size_t size) {
         static char *top = start();
         char *start_ = start();
 
@@ -475,7 +475,7 @@ struct pm_memory_pool_buf {
 
 template <size_t SIZE>
 struct pm_size_allocator {
-    static inline pm_memory_pool *get_memory_pool() {
+    static pm_memory_pool *get_memory_pool() {
         static pm_memory_pool *pool_ = nullptr;
         if(pool_ == nullptr)
             pool_ = pm_stack_new<pm_memory_pool>(SIZE);
@@ -550,12 +550,12 @@ public:
     }
 
     template<typename T>
-    static void add_ref(T *object) {
+    static inline void add_ref(T *object) {
         add_ref_impl(reinterpret_cast<void *>(const_cast<T *>(object)));
     }
 
     template<typename T>
-    static void dec_ref(T *object) {
+    static inline void dec_ref(T *object) {
         if(dec_ref_impl(reinterpret_cast<void *>(const_cast<T *>(object)))){
             object->~T();
             //pm_allocator::release(reinterpret_cast<void *>(const_cast<T *>(object)));
@@ -565,7 +565,7 @@ public:
 
 template< class T, class... Args >
 inline T *pm_new(Args&&... args) {
-    T *object = new(pm_allocator::template obtain<T>()) T(args...);
+    T *object = new(pm_allocator::template obtain<T>()) T{args...};
     pm_allocator::add_ref(object);
     return object;
 }

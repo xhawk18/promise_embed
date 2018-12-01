@@ -402,7 +402,7 @@ public:
 
 template< class T, class... Args >
 inline T *pm_new(Args&&... args) {
-    T *object = new(pm_allocator::template obtain<T>()) T(args...);
+    T *object = new(pm_allocator::template obtain<T>()) T{args...};
     pm_allocator::add_ref(object);
     return object;
 }
@@ -1007,7 +1007,11 @@ inline Defer newPromise(FUNC func) {
     return promise;
 }
 
-/* Loop while func call resolved */
+/*
+ * While loop func call resolved, 
+ * It is not safe since the promise chain will become longer infinitely 
+ * if the returned Defer object was obtained by other and not released.
+ */
 template <typename FUNC>
 inline Defer doWhile_unsafe(FUNC func) {
     return newPromise(func).then([func]() {
