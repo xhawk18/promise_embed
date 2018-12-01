@@ -389,7 +389,7 @@ Defer d1 = d;  //It's safe and effective
 
 main函数最后的运行的事件循环里，可加入使系统进入低功耗状态，并等待唤醒的代码。
 
-例如，例子[M051](examples/M051/main.cpp)的事件循环函数里，加入了__WFE()，这样当没有事件需要处理时，CPU将等待，不会忙等，节约了系统功能。
+例如，例子[M051](examples/M051/main.cpp)的事件循环函数里，加入了__WFE()，这样当没有事件需要处理时，CPU将等待，不会忙等，降低系统功耗。
 
 ```cpp
 void pm_run_loop(){
