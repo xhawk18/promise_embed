@@ -7,12 +7,12 @@
     - [例子](#例子)
         - [编译器要求](#编译器要求)
         - [例子代码](#例子代码)
-    - [Global functions](#global-functions)
+    - [全局函数](#全局函数)
         - [Defer newPromise(FUNC func);](#defer-newpromisefunc-func)
         - [Defer resolve();](#defer-resolve)
         - [Defer reject();](#defer-reject)
         - [Defer doWhile(FUNC func);](#defer-dowhilefunc-func)
-    - [Class Defer - type of promise object.](#class-defer---type-of-promise-object)
+    - [Defer 类 （就是Promise对象所属的类）](#defer-类-就是promise对象所属的类)
         - [Defer::resolve(const RET_ARG... &ret_arg);](#deferresolveconst-ret_arg-ret_arg)
         - [Defer::reject(const RET_ARG... &ret_arg);](#deferrejectconst-ret_arg-ret_arg)
         - [Defer::then(FUNC_ON_RESOLVED on_resolved, FUNC_ON_REJECTED on_rejected)](#deferthenfunc_on_resolved-on_resolved-func_on_rejected-on_rejected)
@@ -20,19 +20,20 @@
         - [Defer::fail(FUNC_ON_REJECTED on_rejected)](#deferfailfunc_on_rejected-on_rejected)
         - [Defer::finally(FUNC_ON_FINALLY on_finally)](#deferfinallyfunc_on_finally-on_finally)
         - [Defer::always(FUNC_ON_ALWAYS on_always)](#deferalwaysfunc_on_always-on_always)
-    - [Timers](#timers)
+    - [延时函数](#延时函数)
         - [Defer yeild();](#defer-yeild)
         - [Defer delay_ms(uint32_t msec);](#defer-delay_msuint32_t-msec)
         - [Defer delay_s(uint32_t sec);](#defer-delay_suint32_t-sec)
         - [void kill_timer(Defer &defer);](#void-kill_timerdefer-defer)
-    - [Handle CPU interrupt](#handle-cpu-interrupt)
+    - [CPU中断处理](#cpu中断处理)
         - [void irq_disable()](#void-irq_disable)
         - [void irq_enable()](#void-irq_enable)
         - [irq<IRQ_NUMBER>::wait(const Defer &defer)](#irqirq_numberwaitconst-defer-defer)
         - [irq<IRQ_NUMBER>::post()](#irqirq_numberpost)
-    - [And more ...](#and-more-)
-        - [about c++ exceptions](#about-c-exceptions)
-        - [copy the promise object](#copy-the-promise-object)
+    - [更多 ...](#更多-)
+        - [关于C++异常](#关于c异常)
+        - [复制Defer类型的对象](#复制defer类型的对象)
+        - [低功耗](#低功耗)
 
 <!-- /TOC -->
 
@@ -40,7 +41,7 @@
 
 Promise-embed为嵌入式开发提供了多任务支持，无需任何的操作系统，无需多线程。
 
-和promise-cpp一样，promise-embed是仿照Javascript Promise/A+标准的c++版本实现。同时，它精简了resolve/reject函数的实现，可以运行与内存极其受限的环境中。例如运行于Cortex-M0/M3芯片里。
+和[promise-cpp](../promise-cpp)一样，promise-embed是仿照Javascript Promise/A+标准的c++版本实现。同时，它精简了resolve/reject函数的实现，可以运行与内存极其受限的环境中。例如运行于Cortex-M0/M3芯片里。
   
 Promise-embed和promise-cpp一样，利用c++11的能力，通过一个任务循环，提供了单线程多任务执行环境。
 
@@ -120,7 +121,7 @@ int main(){
 }
 ```
 
-## Global functions
+## 全局函数
 
 ### Defer newPromise(FUNC func);
 Creates a new Defer object with a user-defined function.
@@ -166,7 +167,7 @@ doWhile([](Defer d){
 
 ```
 
-## Class Defer - type of promise object.
+## Defer 类 （就是Promise对象所属的类）
 
 class Defer is the type of promise object.
 
@@ -278,7 +279,7 @@ return newPromise([](Defer d){
 });
 ```
 
-## Timers
+## 延时函数
 
 ### Defer yeild();
 Yield current task and let other tasks hava an opportunity to run
@@ -334,7 +335,7 @@ delay_s(1).then([=](){
 })
 ```
 
-## Handle CPU interrupt
+## CPU中断处理
 
 ### void irq_disable()
 (In thread) Disable CPU interrupt
@@ -371,16 +372,31 @@ in thread --
     });
 ```
 
-## And more ...
+## 更多 ...
 
-### about c++ exceptions
-Promise-embed does not support to catch exceptions.
+### 关于C++异常
+Promise-embed不支持捕获C++异常
 
-### copy the promise object
-To copy the promise object is allowed and effective, please do that when you need.
+### 复制Defer类型的对象
+Defer对象可放心复制，不会引起效率问题。
 
 ```cpp
 Defer d = newPromise([](Defer d){});
 Defer d1 = d;  //It's safe and effective
 ```
 
+### 低功耗
+
+main函数最后的运行的事件循环里，可加入使系统进入低功耗状态，并等待唤醒的代码。
+
+例如，例子[M051](examples/M051/main.cpp)的事件循环函数里，加入了__WFE()，这样当没有事件需要处理时，CPU将等待，不会忙等，节约了系统功能。
+
+```cpp
+void pm_run_loop(){
+    pm_timer::init_system(SystemCoreClock);
+    while(true){
+        pm_run();
+        __WFE();
+    }
+}
+```
